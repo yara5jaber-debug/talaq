@@ -26,28 +26,33 @@ export async function requireUser() {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, full_name, role")
+    .select("id, full_name, role, is_demo")
     .eq("id", user.id)
     .single();
 
   if (profileError || !profile) {
-    throw new Error(
-      "تعذّرت قراءة ملف المستخدم. تحققي من إنشاء جدول profiles وصلاحياته.",
-    );
+    throw new Error("تعذّرت قراءة ملف المستخدم.");
   }
 
-  const role = profile.role;
-
-  if (!isUserRole(role)) {
+  if (!isUserRole(profile.role)) {
     throw new Error("دور المستخدم غير صالح.");
+  }
+
+  // عند تعذّر تحديد نوع الحساب، نتوقف بدل تجاوز قيود العرض.
+  if (typeof profile.is_demo !== "boolean") {
+    throw new Error("تعذّر التحقق من إعدادات حساب العرض.");
   }
 
   return {
     user,
     profile: {
       id: profile.id as string,
-      fullName: profile.full_name as string,
-      role,
+      fullName:
+        typeof profile.full_name === "string"
+          ? profile.full_name
+          : "",
+      role: profile.role,
+      isDemo: profile.is_demo,
     },
   };
 }

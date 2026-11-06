@@ -11,6 +11,9 @@ interface FormErrors {
   description?: string;
 }
 
+const fieldClass =
+  "block w-full rounded-md border border-line bg-surface px-3.5 text-sm text-ink transition-colors placeholder:text-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:cursor-wait disabled:bg-canvas disabled:text-muted aria-[invalid=true]:border-brand";
+
 export function CustomerRequestForm({
   onCreate,
 }: CustomerRequestFormProps) {
@@ -66,7 +69,7 @@ export function CustomerRequestForm({
       }
     } catch {
       setSubmitError(
-        "تعذّر تأكيد الحفظ. حدّث الصفحة وتحقق من طلباتك قبل إعادة الإرسال.",
+        "تعذّر تأكيد إرسال الطلب. حدّث قائمة طلباتك وتحقق منها قبل إعادة الإرسال.",
       );
     } finally {
       submittingRef.current = false;
@@ -79,55 +82,85 @@ export function CustomerRequestForm({
       onSubmit={handleSubmit}
       noValidate
       aria-busy={isSubmitting}
-      className="mt-7 space-y-6"
+      className="mt-6 space-y-6"
     >
       <div>
-        <label htmlFor="request-subject" className="block text-sm font-medium">
+        <label
+          htmlFor="request-subject"
+          className="block text-sm font-semibold"
+        >
           عنوان المشكلة
         </label>
 
-        <p id="subject-hint" className="mt-1 text-xs leading-6 text-muted">
-          لخّص المشكلة بجملة واحدة، من 5 إلى 120 حرفًا.
+        <p
+          id="subject-hint"
+          className="mt-1.5 text-xs leading-6 text-muted"
+        >
+          عنوان مختصر يوضّح المشكلة، من 5 إلى 120 حرفًا.
         </p>
 
         <input
           ref={subjectRef}
           id="request-subject"
           name="subject"
+          type="text"
           dir="auto"
           value={subject}
           disabled={isSubmitting}
           onChange={(event) => {
             setSubject(event.target.value);
-            setErrors((current) => ({ ...current, subject: undefined }));
+            setErrors((current) => ({
+              ...current,
+              subject: undefined,
+            }));
           }}
           required
           maxLength={120}
           aria-invalid={Boolean(errors.subject)}
           aria-describedby={
-            errors.subject ? "subject-hint subject-error" : "subject-hint"
+            errors.subject
+              ? "subject-hint subject-count subject-error"
+              : "subject-hint subject-count"
           }
-          placeholder="مثال: حسابي لم يتفعّل بعد الاشتراك"
-          className="mt-3 min-h-12 w-full border border-line bg-surface px-3 py-2 text-sm aria-[invalid=true]:border-brand"
+          placeholder="مثال: تعذّر تحميل الفاتورة"
+          className={`${fieldClass} mt-3 min-h-12 py-3`}
         />
 
-        {errors.subject && (
-          <p id="subject-error" className="mt-2 text-xs text-brand">
-            {errors.subject}
+        <div className="mt-2 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            {errors.subject && (
+              <p
+                id="subject-error"
+                className="text-xs leading-6 text-brand"
+              >
+                {errors.subject}
+              </p>
+            )}
+          </div>
+
+          <p
+            id="subject-count"
+            className="shrink-0 text-xs leading-6 tabular-nums text-muted"
+          >
+            <bdi>{subject.length} / 120</bdi>
+            <span className="sr-only"> حرفًا</span>
           </p>
-        )}
+        </div>
       </div>
 
       <div>
         <label
           htmlFor="request-description"
-          className="block text-sm font-medium"
+          className="block text-sm font-semibold"
         >
-          احكِ لنا التفاصيل
+          تفاصيل المشكلة
         </label>
 
-        <p id="description-hint" className="mt-1 text-xs leading-6 text-muted">
-          شو توقعت يصير، وشو صار بدلًا منه؟ اكتب 20 حرفًا على الأقل.
+        <p
+          id="description-hint"
+          className="mt-1.5 text-xs leading-6 text-muted"
+        >
+          ماذا حدث، وما الذي كنت تتوقعه؟ اكتب 20 حرفًا على الأقل.
         </p>
 
         <textarea
@@ -145,7 +178,7 @@ export function CustomerRequestForm({
             }));
           }}
           required
-          rows={7}
+          rows={6}
           maxLength={3000}
           aria-invalid={Boolean(errors.description)}
           aria-describedby={
@@ -153,38 +186,76 @@ export function CustomerRequestForm({
               ? "description-hint description-count description-error"
               : "description-hint description-count"
           }
-          placeholder="بدأت المشكلة لما..."
-          className="mt-3 block w-full resize-y border border-line bg-surface p-3 text-sm leading-8 aria-[invalid=true]:border-brand"
+          placeholder="تظهر المشكلة عندما أحاول..."
+          className={`${fieldClass} mt-3 min-h-44 resize-y py-3 leading-7`}
         />
 
-        <p id="description-count" className="mt-2 text-xs text-muted">
-          {description.length} / 3000 حرف
-        </p>
+        <div className="mt-2 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            {errors.description && (
+              <p
+                id="description-error"
+                className="text-xs leading-6 text-brand"
+              >
+                {errors.description}
+              </p>
+            )}
+          </div>
 
-        {errors.description && (
-          <p id="description-error" className="mt-2 text-xs text-brand">
-            {errors.description}
+          <p
+            id="description-count"
+            className="shrink-0 text-xs leading-6 tabular-nums text-muted"
+          >
+            <bdi>{description.length} / 3000</bdi>
+            <span className="sr-only"> حرفًا</span>
           </p>
-        )}
+        </div>
       </div>
 
       {submitError && (
-        <p role="alert" className="text-sm leading-7 text-brand">
+        <p
+          role="alert"
+          className="rounded-md border border-brand/25 bg-brand-soft px-4 py-3 text-sm leading-7 text-brand"
+        >
           {submitError}
         </p>
       )}
 
-      <div className="border-t border-line pt-5">
+      <div>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="min-h-12 w-full bg-brand px-6 py-3 text-sm font-medium text-white hover:opacity-90 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
+          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-brand px-5 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60"
         >
-          {isSubmitting ? "جارٍ حفظ الطلب..." : "إرسال الطلب"}
+          {isSubmitting && (
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="size-4 animate-spin motion-reduce:animate-none"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="opacity-25"
+              />
+              <path
+                d="M12 3a9 9 0 0 1 9 9"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          )}
+
+          {isSubmitting ? "جارٍ إرسال الطلب..." : "إرسال الطلب"}
         </button>
 
         <p className="mt-3 text-xs leading-6 text-muted">
-          جميع الحقول مطلوبة. ستجد طلبك في قائمة طلباتك بعد إرساله.
+          جميع الحقول مطلوبة. سيظهر الطلب في قائمتك بعد إرساله.
         </p>
       </div>
     </form>

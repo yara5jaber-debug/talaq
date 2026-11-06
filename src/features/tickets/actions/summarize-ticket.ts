@@ -11,7 +11,15 @@ type SummaryResult =
 export async function summarizeTicket(
   ticketId: string,
 ): Promise<SummaryResult> {
-  await requireRole(["admin", "agent"]);
+  const { profile } = await requireRole(["admin", "agent"]);
+
+  if (profile.isDemo) {
+    return {
+      success: false,
+      error:
+        "التلخيص المباشر غير متاح في حساب العرض التجريبي.",
+    };
+  }
 
   if (
     typeof ticketId !== "string" ||
