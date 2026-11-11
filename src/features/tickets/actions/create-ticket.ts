@@ -1,3 +1,4 @@
+
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -8,6 +9,9 @@ type CreateTicketResult =
   | { success: true; number: number }
   | { success: false; error: string };
 
+const demoReadOnlyMessage =
+  "أنت تستخدم حسابًا تجريبيًا مخصصًا لاستكشاف النظام. لإنشاء طلبات جديدة، يرجى استخدام حساب عادي.";
+
 export async function createTicket(
   subject: string,
   description: string,
@@ -15,7 +19,10 @@ export async function createTicket(
   await requireRole(["customer"]);
 
   if (typeof subject !== "string" || typeof description !== "string") {
-    return { success: false, error: "بيانات الطلب غير صالحة." };
+    return {
+      success: false,
+      error: "بيانات الطلب غير صالحة.",
+    };
   }
 
   const cleanSubject = subject.trim();
@@ -28,7 +35,10 @@ export async function createTicket(
     };
   }
 
-  if (cleanDescription.length < 20 || cleanDescription.length > 3000) {
+  if (
+    cleanDescription.length < 20 ||
+    cleanDescription.length > 3000
+  ) {
     return {
       success: false,
       error: "اكتبي تفاصيل من 20 إلى 3000 حرف.",
@@ -47,15 +57,30 @@ export async function createTicket(
     .single();
 
   if (error) {
-    console.error("Create ticket failed:", error.code, error.message);
+    console.error(
+      "Create ticket failed:",
+      error.code,
+      error.message,
+    );
+
+    const isDemoReadOnly =
+      error.code === "42501" &&
+      error.message
+        .toLowerCase()
+        .includes("demo accounts are read-only");
 
     return {
       success: false,
-      error: "تعذّر حفظ الطلب. حاولي مرة أخرى.",
+      error: isDemoReadOnly
+        ? demoReadOnlyMessage
+        : "تعذّر حفظ الطلب. حاولي مرة أخرى.",
     };
   }
 
   revalidatePath("/support");
 
-  return { success: true, number: data.number };
+  return {
+    success: true,
+    number: data.number,
+  };
 }

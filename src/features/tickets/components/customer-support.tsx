@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -27,6 +28,9 @@ type TicketFilter = "all" | "active" | "resolved";
 
 const focusClass =
   "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand";
+
+const demoReadOnlyMessage =
+  "أنت تستخدم حسابًا تجريبيًا مخصصًا لاستكشاف النظام. لإنشاء طلبات جديدة، يرجى استخدام حساب عادي.";
 
 function CustomerTicketItem({
   ticket,
@@ -170,13 +174,25 @@ export function CustomerSupport({
       const result = await createTicket(subject, description);
 
       if (!result.success) {
-        setSaveError(result.error);
+        const errorMessage = result.error || "";
+
+        const isDemoReadOnly = errorMessage
+          .toLowerCase()
+          .includes("demo accounts are read-only");
+
+        setSaveError(
+          isDemoReadOnly
+            ? demoReadOnlyMessage
+            : errorMessage || "تعذّر حفظ الطلب. حاولي مرة أخرى.",
+        );
+
         return false;
       }
 
       setFeedback(
         `تم إرسال طلبك TLQ-${result.number}. يمكنك متابعة الردود من قائمة طلباتك.`,
       );
+
       setFilter("all");
       refreshTickets();
 
@@ -185,6 +201,7 @@ export function CustomerSupport({
       setSaveError(
         "تعذّر تأكيد إرسال الطلب. حدّث قائمة طلباتك قبل المحاولة مجددًا لتجنّب إرسال طلب مكرر.",
       );
+
       return false;
     }
   }
